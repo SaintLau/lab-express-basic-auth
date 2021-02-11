@@ -4,16 +4,73 @@ const User = require('../models/User.model');
 const bcrypt = require('bcryptjs');
 
 
+//To get login
+router.get('/login', (req, res) => {
+    res.render('auth/login');
+});
+
 router.get('/signup', (req, res) => {
     res.render('auth/signup');
 });
 
+//To post login
+router.post('/login', (req, res) => {
+    const { username, password } = req.body;
+
+    if (!username || !password) {
+        res.render('auth/login', {
+            errorMessage: 'Please enter both username and password'
+        });
+        return;
+    }
+    User.findOne({username: username })
+    .then((user) => {
+        if(!user) {
+            res.render('auth/login', {
+                errorMessage: 'Invalid login'
+            });
+            //User doesn't exist on database
+            return;
+        }
+        if (bcrypt.compareSync(password, user.password)){
+            //On sucessful login
+            req.session.currentUser=user;
+            res.redirect('/');
+        } else {
+            //Passwprd don't match
+            res.render('auth/login', {
+                errorMessage: 'Invalid login'
+            });
+        }
+    });
+
+});
+
+
+//To post SignUp
 router.post('/signup', (req, res) => {
     const { username, password } = req.body;
     if (username === '' || password === '') {
         res.render('auth/signup', { errorMessage: 'Indicate username and password'});
         return;
     }
+    //Server side validation on password constrain
+  //Regular expressions
+  const passwordRegex = /(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{6,}/;
+  if (passwordRegex.test(password) === false) {
+    res.render('auth/signup',
+    { errorMessage: 'Weak password'});
+    return;
+  }
+
+  User.findOne( {username: username})
+  .then((user) => {
+    if (user) {
+      res.render('/auth/signup',
+      { errorMessage: 'User already exists'});
+      return;
+    }
+
     //create user
     const saltRounds = 10;
     const salt = bcrypt.genSaltSync(saltRounds);
@@ -27,10 +84,18 @@ router.post('/signup', (req, res) => {
         if(error.code === 11000) {
             res.render('auth/signup', {
                 errorMessage: 'Username should be unique'
-            })
+            });
         }
+    })
     });
 
 });
+
+//To logout
+
+router.post('/logout', (req, res) => {
+    req.session.destroy();
+    res.redirect('/');
+  });
 
 module.exports = router;

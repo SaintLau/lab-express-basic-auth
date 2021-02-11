@@ -1,4 +1,20 @@
 <h1>{{title}}</h1>
 <p>Welcome to {{title}}</p>
 
+<!-- The user log name -->
 <a href="./signup">Signup</a>
+
+{{#if user}}
+  Hello {{user.username}}
+  <form action="/logout" method="POST">
+    <button type="submit">Logout</button>
+  </form>
+
+<a href="/private">Secret Page</a> 
+<a href="/main">Main Page</a> 
+{{else}}
+
+<a href="./login">LogIn</a>
+
+{{/if}}
+
